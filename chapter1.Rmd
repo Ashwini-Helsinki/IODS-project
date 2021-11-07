@@ -2,6 +2,11 @@
 # About the project
 
 *Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+This is 'Open data science' course. I am familier with R and R studio. I have used Git earlier but I am not confident enough to use it indepenently. 
+I am interested in learning about data science and how Statistics can be conveyed to non-statisticians.
+I was searching for a course not necessarily in Statistics but will talk about data science applicable for any field and some simple ways of learning and using Github.
+The reviews of earlier students of this course encouraged me to enrol in this course.
+My github repository for this course: https://github.com/Ashwini-Helsinki/IODS-project
 
 ```{r}
 # This is a so-called "R chunk" where you can write R code.
