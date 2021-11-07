@@ -3,7 +3,7 @@
 
 This is 'Open data science' course. I am familiar with R and R studio. I have used Git earlier but I am not confident enough to use it independently. 
 I am interested in learning about data science and how Statistics can be conveyed to non-statisticians.
-I was searching for a course not necessarily in Statistics but will talk about data science applicable for any field and some simple ways of learning and using Github.
+I was searching for a course not necessarily in Statistics but a course that will talk about data science applicable for any field and some simple ways of learning and using Github.
 The reviews of earlier students of this course encouraged me to enroll in this course.
 My github repository for this course: https://github.com/Ashwini-Helsinki/IODS-project
 
