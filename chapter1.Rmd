@@ -7,11 +7,6 @@ I was searching for a course not necessarily in Statistics but a course that wil
 The reviews of earlier students of this course encouraged me to enroll in this course.
 My github repository for this course: https://github.com/Ashwini-Helsinki/IODS-project
 
-```{r}
-# This is a so-called "R chunk" where you can write R code.
 
-date()
 
-```
-The text continues here.
 

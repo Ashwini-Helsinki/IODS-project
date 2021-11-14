@@ -1,13 +1,153 @@
-# Insert chapter 2 title here
+# Regression and model validation
 
-*Describe the work you have done this week and summarize your learning.*
+First thing is to load required libraries or R packages for this exercise.
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
-
-```{r}
-date()
+```{r packages, warning=FALSE, message=FALSE}
+# Required libraries
+library(GGally)
+library(ggplot2)
 ```
 
-Here we go again...
+## Read the data
+
+The data created in data wrangling exercise is read as 'data2' here.
+The data is about 166 students. Each row describes one student with 7 columns of information.
+Information such as age, gender, student's learning approaches (such as deep learning, surface learning and strategic learning) and attitude towards Statistics is given in various columns of the data.
+Column 'Points' gives exam points of each student.
+
+```{r read the data, warning=FALSE, message=FALSE}
+setwd("D:/Helsinki/Courses/OpenDataScience/IODS-project/")
+data2 <- read.csv("data/learning2014.csv",header = TRUE)
+
+# Dimension of data: rows and columns respectively.
+dim(data2)
+
+# Stucture of data
+str(data2)
+
+```
+
+
+## Graphical overview
+
+Summary of each variable in the analysis data is shown below. 
+For each variable its minimum value, maximum value, 1st, 2nd (median) and 3rd quantile and mean value is shown in the summary. 
+
+```{r variables summary, warning=FALSE, message=FALSE}
+
+summary(data2)
+
+```
+
+
+Let's examine in detail how each of the variable in the data is distributed and the relationship of these variables with each other.
+
+```{r variables plot1, warning=FALSE, message=FALSE}
+
+# create graphical overview of variables with ggpairs()
+p <- ggpairs(data2, mapping = aes(), lower = list(combo = wrap("facethist", bins = 20)))
+
+# draw the plot
+p
+
+
+```
+
+Above graph shows distribution of each variable in the data and its correlation with other variables in the data. 
+This is a plot matrix with 7 rows and 7 columns. Each row and each column represents one variable from the data.
+
+For all other variables except 'gender', density plot is shown in the diagonal position. 
+In all other positions of the same column below the diagonal entry, a scatter plot of joint observations with the variable in the corresponding row are shown.
+Similarly, in the same row on the right side of the diagonal position shows correlation between the row and column variables.
+
+Since gender variable has only 2 values 'F' and 'M', above plot has shown histogram for gender variable. 
+Also, its relation with other variables is also shown by histograms (in the first column) and box plots (in the first row) of those variables in each gender.
+
+From the graph, it can be seen that there are more than 100 female students and around 50 male students. 
+Looking at the density plot of 'Age', most of the students are of the age less than 30. The long right tail suggests that there are a few students above 30 and up to 60 years of age.
+Density of 'attitude' variable looks normal with span from 1 to 5 with mode around 3. 'deep' learning approach has a long left tail. 
+Strategic learning 'stra' and surface learning both show slightly bimodal densities.  Points has a mode around 22 ans a small amont of observations near 11.
+
+From the correlations, it can be seen that attitude towards Statistics and exam points are positively correlated. It means better the attitude more the exam points.
+Surface learning is negatively correlated with all other variables.
+
+
+How these variables are different for two 'gender' groups is shown in the following graph. 
+Transparency of the overlapping plots is set by alpha.
+
+
+
+```{r variables plot2, warning=FALSE, message=FALSE}
+
+# create graphical overview of variables with ggpairs()
+p1 <- ggpairs(data2, mapping = aes(col= gender, alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+
+# draw the plot
+p1
+
+
+```
+
+
+
+## Linear regression
+
+Let's fit a linear regression model to study effect of three covariates attitude, deep and age on exam points.
+
+
+```{r model1, warning=FALSE, message=FALSE}
+
+my_model1 <- lm(Points ~ attitude + deep + stra, data= data2)
+
+summary(my_model1)
+
+```
+
+Summary of the model shows that 'attitude' and 'stra' have statistically significant relationship with the target variable 'Points' since the p-values corresponding to them are small.
+p-value corresponding to co-variate 'attitude' is less than 0.001. The estimate of its coefficient is 3.5254 with standard error 0.5683. 
+Increase of 1 unit in attitude increases the exam points by 3.5254 units.
+
+p-value corresponding to 'stra' is less than 0.1. It has coefficient estimate of 0.9621 indicating 0.9621 units increase in exam points when 'stra' is increased by 1 unit.
+
+Variable 'deep' is not showing significant relationship with 'Points' (p-value > 0.3) hence, it is removed from the model.
+
+The intercept term has a large estimate of 11.3915. The p/value corresponding to intercept is also very small indicating that some important covariates are not considered in the model.
+
+However, no new covariate will be added at this stage. 
+As per the instructions in the exercise, we will fit the new model by removing 'deep'. 
+
+```{r model2, warning=FALSE, message=FALSE}
+
+my_model2 <- lm(Points ~ attitude + stra , data= data2)
+
+summary(my_model2)
+
+```
+Summary of the new model is shown above. 
+Relationship of attitude and 'stra' has not changed much as compared to the previous model. 
+The model can be written as
+
+Points = 8.9729 + (3.4658 * attitude) + (0.9137 * stra) + (Error term)
+
+Error term is considered to be normally distributed. 
+Multiple R-squared is 0.2048. It means this model does not explain variation in the response variable 'Points' well. 
+
+To study, model fitting in more detail, let's examine various plots of the models.
+
+```{r model plots, warning=FALSE, message=FALSE}
+
+par(mfrow = c(1,3))
+plot(my_model2, which=c(1,2,5))
+
+```
+
+Residual vs Fitted plot is a scatter plot and no specific relation can be obtained which will indicate possible relation of the fitted value with the residual. 
+Also, the red line is a bit deviated from the horizontal line but the deviation is not large enough. 
+Hence, it can be observed that size of the error does not depend on the explanatory variables as assumed in linear regression.
+
+Second assumption in linear regression is that error term is normally distributed. Second plot 'Normal Q-Q plot shows that most of the observations are close to the straight line. But some observations (number 35, 56,145) and some observations at the top deviate a bit from the straight line. Points in the middle region follow the assumption of normality of error term.
+
+From the Residual vs Leverage plot, it can be seen that observation number 35, 71 and 145 have extreme leverage as compared to other points. Still, the leverage is not outside Cook's distance hence, there is no single observation impacting the model.
+
+
+
