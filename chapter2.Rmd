@@ -103,6 +103,8 @@ summary(my_model1)
 
 ```
 
+The 't value' in the summary table shows test statistic for the statistical test of parameter (coefficient) corresponding to each covariate (explanatory variable). It tests if the coefficient is zero or not. If the coefficient is away from zero that means the corresponding explanatory variable has impact on the response (target) variable. If the standardize test statistic (t value) is large ( positive or negative) then the corresponding p-value is small; indicating statistical significance of the covariate.
+
 Summary of the model shows that 'attitude' and 'stra' have statistically significant relationship with the target variable 'Points' since the p-values corresponding to them are small.
 p-value corresponding to co-variate 'attitude' is less than 0.001. The estimate of its coefficient is 3.5254 with standard error 0.5683. 
 Increase of 1 unit in attitude increases the exam points by 3.5254 units.

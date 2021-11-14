@@ -306,6 +306,7 @@ summary(my_model1)</code></pre>
 ## Residual standard error: 5.289 on 162 degrees of freedom
 ## Multiple R-squared:  0.2097, Adjusted R-squared:  0.195 
 ## F-statistic: 14.33 on 3 and 162 DF,  p-value: 2.521e-08</code></pre>
+<p>The ‘t value’ in the summary table shows test statistic for the statistical test of parameter (coefficient) corresponding to each covariate (explanatory variable). It tests if the coefficient is zero or not. If the coefficient is away from zero that means the corresponding explanatory variable has impact on the response (target) variable. If the standardize test statistic (t value) is large ( positive or negative) then the corresponding p-value is small; indicating statistical significance of the covariate.</p>
 <p>Summary of the model shows that ‘attitude’ and ‘stra’ have statistically significant relationship with the target variable ‘Points’ since the p-values corresponding to them are small. p-value corresponding to co-variate ‘attitude’ is less than 0.001. The estimate of its coefficient is 3.5254 with standard error 0.5683. Increase of 1 unit in attitude increases the exam points by 3.5254 units.</p>
 <p>p-value corresponding to ‘stra’ is less than 0.1. It has coefficient estimate of 0.9621 indicating 0.9621 units increase in exam points when ‘stra’ is increased by 1 unit.</p>
 <p>Variable ‘deep’ is not showing significant relationship with ‘Points’ (p-value &gt; 0.3) hence, it is removed from the model.</p>
