@@ -92,7 +92,7 @@ p1
 
 ## Linear regression
 
-Let's fit a linear regression model to study effect of three covariates attitude, deep and age on exam points.
+Let's fit a linear regression model to study effect of three covariates attitude, deep and stra on exam points.
 
 
 ```{r model1, warning=FALSE, message=FALSE}
@@ -113,7 +113,7 @@ p-value corresponding to 'stra' is less than 0.1. It has coefficient estimate of
 
 Variable 'deep' is not showing significant relationship with 'Points' (p-value > 0.3) hence, it is removed from the model.
 
-The intercept term has a large estimate of 11.3915. The p/value corresponding to intercept is also very small indicating that some important covariates are not considered in the model.
+The intercept term has a large estimate of 11.3915. The p-value corresponding to intercept is also very small indicating that some important covariates are not considered in the model.
 
 However, no new covariate will be added at this stage. 
 As per the instructions in the exercise, we will fit the new model by removing 'deep'. 
