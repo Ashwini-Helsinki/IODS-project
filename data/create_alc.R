@@ -8,6 +8,8 @@
 
 # Required packages
 library(dplyr)
+library(tidyr)
+library(ggplot2)
 
 # Set working directory
 setwd("D:/Helsinki/Courses/OpenDataScience/IODS-project/data/")
@@ -86,4 +88,8 @@ write.table(alc,'Alcdata.csv', sep=',',col.names = TRUE, row.names = FALSE)
 
 
 # glimpse at the modified data
-glimpse(alc)
+gather(alc) %>% glimpse
+
+# draw a bar plot of each variable
+gather(alc) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free")+ geom_bar()
+
