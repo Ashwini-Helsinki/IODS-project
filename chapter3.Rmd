@@ -1,0 +1,180 @@
+# Logistic Regression
+
+First thing is to load required libraries or R packages for this exercise.
+
+```{r packages3, warning=FALSE, message=FALSE, echo=TRUE}
+# Required libraries
+library(ggplot2)
+library(dplyr)
+library(boot)
+```
+
+## Read the data
+
+The data created in data wrangling exercise is read as 'data3' here.
+This data discusses student achievement in secondary education of two Portuguese schools. The data attributes include student grades, demographic, social and school related features) and it was collected by using school reports and questionnaires. The dataset includes the performance in two distinct subjects: Mathematics (mat) and Portuguese language (por). G1, G2 and G3 show average grades earned by the student. '.math' and '.por' suffixes show grades in Maths and Portuguese language courses. G3 is the final year grade (issued at the 3rd period), while G1 and G2 correspond to the 1st and 2nd period grades. 
+
+```{r read the data3, warning=FALSE, message=FALSE}
+setwd("D:/Helsinki/Courses/OpenDataScience/IODS-project/")
+data3 <- read.csv("data/Alcdata.csv",header = TRUE)
+
+# Dimension of data: rows and columns respectively.
+dim(data3)
+
+# Stucture of data
+str(data3)
+
+```
+
+
+This data is used in this analysis to study the relationships between high/low alcohol consumption and some of the other variables in the data.
+
+## Hypothesis
+
+Let's choose four variables namely 'sex', 'famrel', 'absences' and 'failures'. 
+My hypotheses about relationships of these variables with high alcohol consumption are as follows:
+1. 'sex' may not have direct relationship with high alcohol consumption. 
+2. 'famrel' i.e. Good family relationship is negatively correlated with high alcohol consumption. This is a categorical variable.  
+3. 'absences' and 'failures' are positively correlated with  high alcohol consumption. 
+
+
+## Numerical and graphical exploration
+
+Let's observe the relationship of these 4 variables with high alcohol consumption.
+
+1. 'sex' is binary and 'alcohol consumption is also binary variable. So let's use a 2x2 table and bar graph.
+
+
+```{r sex, echo=FALSE}
+table(data3$sex, data3$high_use)
+ggplot(data3, aes(x=sex, fill=high_use))+ geom_bar(aes(y = (..count..)/sum(..count..)))+ 
+          scale_y_continuous(labels=scales::percent) +
+  ylab("relative frequencies")
+
+```
+Both the tabular view and graph show that sex 'M' has more percentage of high alcohol consumption than female 'F'. It shows that my hypothesis about relationship of 'sex' and 'high/low alcohol consumption' is not true.
+
+
+2. Family relationship
+
+```{r famrel, echo=FALSE}
+table(data3$famrel, data3$high_use)
+ggplot(data3, aes(x=famrel, fill=high_use))+ geom_bar(aes(y = (..count..)/sum(..count..)), position=position_dodge())+ 
+          scale_y_continuous(labels=scales::percent) +
+  ylab("relative frequencies")
+
+```
+
+Both the tabular and graph show that for famrel 1 to 3 categories, relative frequency of high alcohol consumption is substantial. However, in category 4 and 5 which indicates better family relationships, has lower percentage of students with high alcohol consumption.
+Here my hypothesis is somewhat true.
+
+3. Absences
+
+```{r adsences, echo=FALSE}
+table(data3$absences , data3$high_use)
+ggplot(data3, aes(x=high_use , y=absences))+ geom_boxplot()
+
+```
+
+Looking at the box plot, it can be seen that students with high alcohol consumption have more absences. The range in both the boxes is similar but the box with whisker in 'True' category is much larger and its box has 3rd quantile much above the median. It indicates that absences and high alcohol consumption are positively correlated.
+My hypothesis is true to an extent. 
+
+
+4. Failures
+
+```{r failure, echo=FALSE}
+table(data3$failures , data3$high_use)
+ggplot(data3, aes(x=failures , fill=high_use))+ geom_bar(aes(y = (..count..)/sum(..count..)),position=position_dodge())+ 
+          scale_y_continuous(labels=scales::percent) +
+  ylab("relative frequencies")
+
+```
+
+Here high alcohol consumption increases with more number of failures. My hypothesis is true.
+
+## Logistic regression model
+
+Let's fit a logistic regression model to study effect of these 4 covariates sex, famrel, absences and failures on high/low alcohol consumption.
+
+
+```{r model1_3, warning=FALSE, message=FALSE}
+
+my_model1 <- glm(high_use ~ sex +  famrel + absences + failures, data= data3, family =binomial(link = "logit"))
+
+summary(my_model1)
+
+exp( coef(my_model1) )
+
+exp( confint(my_model1) )
+```
+
+## Prediction
+
+```{r model1 prediction, warning=FALSE, message=FALSE}
+
+# predict() the probability of high_use
+probabilities <- predict(my_model1, type = "response")
+
+# add the predicted probabilities to 'alc'
+alc <- mutate(data3, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability > 0.5)
+
+# see the last ten original classes, predicted probabilities, and class predictions
+select(alc, famrel, failures, absences, sex, high_use, probability, prediction) %>% tail(10)
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction)
+
+
+# initialize a plot of 'high_use' versus 'probability' in 'alc'
+g <- ggplot(alc, aes(x = probability, y = high_use, col = prediction))
+
+# define the geom as points and draw the plot
+g + geom_point()
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction) %>% prop.table %>% addmargins
+
+# the logistic regression model m and dataset alc with predictions are available
+
+# define a loss function (average prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc$high_use, prob = alc$probability)
+```
+
+
+## Cross validation
+
+```{r model1 cv, warning=FALSE, message=FALSE}
+
+# K-fold cross-validation
+
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = my_model1, K = 10)
+
+# average number of wrong predictions in the cross validation
+cv$delta[1]
+
+
+```
+
+
+```{r model1 backward, warning=FALSE, message=FALSE}
+
+myForm <- as.formula(high_use ~sex + age+famsize+Pstatus+Medu+Fedu+Mjob+Fjob+reason+guardian+traveltime+studytime+schoolsup+famsup+activities+nursery+higher+        internet+romantic+famrel+freetime+goout+health+failures+paid+absences+G3)
+
+#sofNoMis <- sof[which(complete.cases(sof[,all.vars(myForm)])),]
+
+FulMod2 <- glm(myForm,family=binomial(link="logit"),data=data3)
+
+#step(FulMod2,direction="backward",trace=1)
+
+
+```
+
