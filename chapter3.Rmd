@@ -4,7 +4,6 @@ First thing is to load required libraries or R packages for this exercise.
 
 ```{r packages3, warning=FALSE, message=FALSE, echo=TRUE}
 # Required libraries
-library(ggplot2)
 library(dplyr)
 library(boot)
 ```
@@ -21,8 +20,8 @@ data3 <- read.csv("data/Alcdata.csv",header = TRUE)
 # Dimension of data: rows and columns respectively.
 dim(data3)
 
-# Stucture of data
-str(data3)
+# variable names of data
+colnames(data3)
 
 ```
 
@@ -32,33 +31,41 @@ This data is used in this analysis to study the relationships between high/low a
 ## Hypothesis
 
 Let's choose four variables namely 'sex', 'famrel', 'absences' and 'failures'. 
-My hypotheses about relationships of these variables with high alcohol consumption are as follows:
-1. 'sex' may not have direct relationship with high alcohol consumption. 
-2. 'famrel' i.e. Good family relationship is negatively correlated with high alcohol consumption. This is a categorical variable.  
-3. 'absences' and 'failures' are positively correlated with  high alcohol consumption. 
+My hypotheses about relationships of these variables with high alcohol consumption are as follows:\
+1. 'sex' may not have direct relationship with high alcohol consumption. \
+2. 'famrel' i.e. Good family relationship has negative impact on high alcohol consumption. This is a categorical variable. Better the family relations less alcohol consumption. \
+3. 'absences' and 'failures' have positive impact on high alcohol consumption. More the absences more alcohol consumption.\
 
 
 ## Numerical and graphical exploration
 
 Let's observe the relationship of these 4 variables with high alcohol consumption.
 
-1. 'sex' is binary and 'alcohol consumption is also binary variable. So let's use a 2x2 table and bar graph.
+1. 'sex' is a binary variable and 'alcohol consumption' is also a binary variable. So let's use a 2x2 table and bar graph to look at their relationship.
 
 
-```{r sex, echo=FALSE}
+```{r sex, warning=FALSE, message=FALSE}
+# 2x2table
 table(data3$sex, data3$high_use)
+
+# bar graph
 ggplot(data3, aes(x=sex, fill=high_use))+ geom_bar(aes(y = (..count..)/sum(..count..)))+ 
           scale_y_continuous(labels=scales::percent) +
   ylab("relative frequencies")
 
 ```
-Both the tabular view and graph show that sex 'M' has more percentage of high alcohol consumption than female 'F'. It shows that my hypothesis about relationship of 'sex' and 'high/low alcohol consumption' is not true.
+Both the tabular view and graph show that sex 'M' has more percentage of high alcohol consumption than female group 'F'. It shows that my hypothesis about relationship of 'sex' and 'high/low alcohol consumption' is not true.
 
 
 2. Family relationship
 
-```{r famrel, echo=FALSE}
+Let's look at the tabular and graphical representation.
+
+```{r famrel, warning=FALSE, message=FALSE}
+# tabular representation
 table(data3$famrel, data3$high_use)
+
+# bar graph
 ggplot(data3, aes(x=famrel, fill=high_use))+ geom_bar(aes(y = (..count..)/sum(..count..)), position=position_dodge())+ 
           scale_y_continuous(labels=scales::percent) +
   ylab("relative frequencies")
@@ -70,8 +77,11 @@ Here my hypothesis is somewhat true.
 
 3. Absences
 
-```{r adsences, echo=FALSE}
+```{r adsences, warning=FALSE, message=FALSE}
+# tabular representation
 table(data3$absences , data3$high_use)
+
+# box plot
 ggplot(data3, aes(x=high_use , y=absences))+ geom_boxplot()
 
 ```
@@ -82,8 +92,11 @@ My hypothesis is true to an extent.
 
 4. Failures
 
-```{r failure, echo=FALSE}
+```{r failure, warning=FALSE, message=FALSE}
+# tabular representation
 table(data3$failures , data3$high_use)
+
+# bar graph
 ggplot(data3, aes(x=failures , fill=high_use))+ geom_bar(aes(y = (..count..)/sum(..count..)),position=position_dodge())+ 
           scale_y_continuous(labels=scales::percent) +
   ylab("relative frequencies")
@@ -95,37 +108,64 @@ Here high alcohol consumption increases with more number of failures. My hypothe
 ## Logistic regression model
 
 Let's fit a logistic regression model to study effect of these 4 covariates sex, famrel, absences and failures on high/low alcohol consumption.
+Though famrel and failures can be looked as categorical variables, the data is not equally distributed over all categories so considering any one of the category as base is difficult. Let's continue with these variables as continuous variable. 'Sex' is a binary variable so one of the categories will be treated as base category and other one will be treated in comparison to the base category. 
 
 
 ```{r model1_3, warning=FALSE, message=FALSE}
+# Fit logistic regression
+my_model1 <- glm(high_use ~ sex +  famrel + absences + failures  , data= data3, family =binomial(link = "logit"))
 
-my_model1 <- glm(high_use ~ sex +  famrel + absences + failures, data= data3, family =binomial(link = "logit"))
 
+# summary of the model
 summary(my_model1)
 
-exp( coef(my_model1) )
-
-exp( confint(my_model1) )
+# Estimate and confidence interval
+cbind(coef(my_model1), confint(my_model1))
 ```
 
+'sexM' estimate gives coefficient of category 'M' when the base category 'F' is given by intercept term. All 4 covariates have p-value smaller than 0.05 so all 4 covariates show statistical significant relation with high alcohol consumption. Also, all the coefficients are away from zero and the 95% confidence interval exclude zero for all 4 covariates. To view these effects in terms of odds ratio, let's take exponential of coefficients and confidence interval. 
+
+```{r model1_3 odds, warning=FALSE, message=FALSE}
+# Odds ratios by exponentiating coefficients of the model
+print("Odds ratios - estimate and confidence interval")
+cbind(exp(coef(my_model1)), exp(confint(my_model1)))
+
+```
+Although, 'absences' has odds ratio 1.0935286 which is not far away from 1, its confidence interval excludes zero. Hence for all 4 Odds ratio, confidence intervals exclude 1 indicating statistical relation with the target variable high_use.
+If this result is compared with initial hypotheses. sexM has effect on high_use hence the initial hypotheses is not true. 'famrel' have negative effect on high_use since the odds ratio and 95% interval lie below 1. 'absences' has positive impact on high_use. 'Failures' clearly has relation with high_use. 
+So for these 3 covariates initial hypothesis is true.
+
+AIC of this model is 411.77. Only when AIC of other model is known it can be compared with this AIC to decide a better model. Model with lower AIC is considered as better fit model. 
+
+
 ## Prediction
+
+Next step is prediction using the model my_model1. predict() function will give probabilities as the prediction for each row in the dataset. The probabilities greater than 0.5 will be considered as 'TRUE' (high_use = TRUE or 1) value of prediction and others as 'FALSE' (high_use = FALSE or 0)
 
 ```{r model1 prediction, warning=FALSE, message=FALSE}
 
 # predict() the probability of high_use
 probabilities <- predict(my_model1, type = "response")
 
-# add the predicted probabilities to 'alc'
+# add the predicted probabilities to the data to get a nwe dataset 'alc'
 alc <- mutate(data3, probability = probabilities)
 
 # use the probabilities to make a prediction of high_use
 alc <- mutate(alc, prediction = probability > 0.5)
 
-# see the last ten original classes, predicted probabilities, and class predictions
-select(alc, famrel, failures, absences, sex, high_use, probability, prediction) %>% tail(10)
+```
+
+Next table and graph shows prediction accuracy in terms of observed value of high_use and predictions.
+
+```{r prediction table graph, warning=FALSE, message=FALSE}
 
 # tabulate the target variable versus the predictions
 table(high_use = alc$high_use, prediction = alc$prediction)
+
+
+print("In terms of proportions and with margins")
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction) %>% prop.table %>% addmargins
 
 
 # initialize a plot of 'high_use' versus 'probability' in 'alc'
@@ -134,10 +174,11 @@ g <- ggplot(alc, aes(x = probability, y = high_use, col = prediction))
 # define the geom as points and draw the plot
 g + geom_point()
 
-# tabulate the target variable versus the predictions
-table(high_use = alc$high_use, prediction = alc$prediction) %>% prop.table %>% addmargins
+```
 
-# the logistic regression model m and dataset alc with predictions are available
+To compute prediction error in terms of average number of wrong predictions, let's define a loss function as given in the DataCamp.
+
+```{r loss function, warning=FALSE, message=FALSE}
 
 # define a loss function (average prediction error)
 loss_func <- function(class, prob) {
@@ -147,10 +188,15 @@ loss_func <- function(class, prob) {
 
 # call loss_func to compute the average number of wrong predictions in the (training) data
 loss_func(class = alc$high_use, prob = alc$probability)
+
 ```
+
+Average number of wrong predictions with the model my_model1 are 0.24 (aprox).
 
 
 ## Cross validation
+
+Let's perform 10-fold cross validation for 'alc' data, model my_model1 and the loss function defined above.
 
 ```{r model1 cv, warning=FALSE, message=FALSE}
 
@@ -161,20 +207,65 @@ cv <- cv.glm(data = alc, cost = loss_func, glmfit = my_model1, K = 10)
 # average number of wrong predictions in the cross validation
 cv$delta[1]
 
-
 ```
+With 10 fold cross validation, the average number of wrong predictions is near 0.26 (aprox.) 
+( The exact value is not mentioned here, since the initial seed is not set here, so each run of cv function gives slightly different value. But all of them are close to 0.26) which is more than the training error 0.24. 
+This is expected since the training error is computed for prediction of observations used for training the model while CV error is obtained from the prediction of the observations which are not used for training the model. Training error can be viewed as error given by only estimation error. The uncertainty due to new unknown data is not there. Hence, CV error is always greater than the training error. 
 
+Looking at the cv error, one can claim that performance of this model is similar to that of the model given in DataCamp.
+
+Next, let's consider large number of predictors to start with and keep reducing 1 predictor in each step based on their deviance. In each step one covariate, which contributes to the error the most, is removed from the model. The process continues till no further improvement is achieved by removing a covariate. This can be performed using 'step' function on the full model.
 
 ```{r model1 backward, warning=FALSE, message=FALSE}
 
-myForm <- as.formula(high_use ~sex + age+famsize+Pstatus+Medu+Fedu+Mjob+Fjob+reason+guardian+traveltime+studytime+schoolsup+famsup+activities+nursery+higher+        internet+romantic+famrel+freetime+goout+health+failures+paid+absences+G3)
+# formula using 26 covariates in the data is created.
+BiggerFormula <- as.formula(high_use ~sex + age+famsize+Pstatus+Medu+Fedu+Mjob+
+  Fjob+guardian+traveltime+studytime+schoolsup+famsup+activities+nursery+higher+        
+  internet+romantic+famrel+freetime+goout+health+failures+paid+absences+G3)
 
-#sofNoMis <- sof[which(complete.cases(sof[,all.vars(myForm)])),]
+# glm is fitted to the bigger formula.
+FullModel <- glm(BiggerFormula,family=binomial(link="logit"),data=data3)
 
-FulMod2 <- glm(myForm,family=binomial(link="logit"),data=data3)
+# For loop to reduce 1 covariate in every step.
+finalDF <- c() # to save final result
+numcov = 26 # initial number of covariates
 
-#step(FulMod2,direction="backward",trace=1)
+for( mm in 1:26){
+  
+  prevnumcov= numcov
+  
+  # perform stepwise backward elimination with steps = mm 
+  Newmodel <- step(FullModel,direction="backward",trace=FALSE, steps =mm)
+  
+  numcov=length(coef(Newmodel))-1
+  
+  if(numcov == prevnumcov){ 
+    print(paste0("No further improvement after ",prevnumcov, " variables." ))
+    break
+  }
+  # predict() the probability of high_use
+  probabilities <- predict(Newmodel, type = "response")
+  
+  # add the predicted probabilities to the data to get a nwe dataset 'alc'
+  alc1 <- mutate(alc, probability1 = probabilities)
+  
+  # use the probabilities to make a prediction of high_use
+  alc1 <- mutate(alc1, prediction1 = probability1 > 0.5)
+ 
+  trainerror = loss_func(class = alc1$high_use, prob = alc1$probability1)
+  
+  cv <- cv.glm(data = alc1, cost = loss_func, glmfit = Newmodel, K = 10)
+  
+  # average number of wrong predictions in the cross validation
+  newcv = cv$delta[1]
+  finalDF <- rbind(finalDF, c(numcov,trainerror,'Training'),c(numcov,newcv,'Prediction'))
+}
+finalDF = data.frame(finalDF)
+colnames(finalDF) <- c('Number of covariates', 'Error', 'Type')
 
+ggplot(finalDF, aes(x= `Number of covariates`, y=as.numeric(Error), col=Type)) + 
+  geom_point() + scale_y_continuous(labels = scales::number_format(accuracy = 0.01))
 
 ```
 
+For models with large number of covariates, training error is smaller but prediction error is large. Models with properly chosen less number of covariates have training error not largely different but much lesser prediction error.

@@ -134,7 +134,7 @@ Points = 8.9729 + (3.4658 * attitude) + (0.9137 * stra) + (Error term)
 Error term is considered to be normally distributed. 
 Multiple R-squared is 0.2048. It means this model does not explain variation in the response variable 'Points' well. 
 
-To study, model fitting in more detail, let's examine various plots of the models.
+To study model fitting in more detail, let's examine various plots of the models.
 
 ```{r model plots, warning=FALSE, message=FALSE}
 
