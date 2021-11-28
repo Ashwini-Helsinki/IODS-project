@@ -25,7 +25,8 @@ str(hd)
 summary(hd)
 
 # rename column names to shorter names 
-hd <-dplyr::rename(hd, HDI =Human.Development.Index..HDI., LifeExpext = Life.Expectancy.at.Birth, ExpEduYr= Expected.Years.of.Education, MeanEduYr= Mean.Years.of.Education ,  GNI_Cap=Gross.National.Income..GNI..per.Capita, RankDiff_GNI_HDI=GNI.per.Capita.Rank.Minus.HDI.Rank )
+hd <-dplyr::rename(hd, HDI =Human.Development.Index..HDI., LifeExpext = Life.Expectancy.at.Birth, ExpEduYr= Expected.Years.of.Education, MeanEduYr= Mean.Years.of.Education ,  
+                   GNI_Cap=Gross.National.Income..GNI..per.Capita, RankDiff_GNI_HDI=GNI.per.Capita.Rank.Minus.HDI.Rank )
 
 # the (column) names of  “Gender inequality” dataset
 names(gii)
@@ -37,8 +38,9 @@ str(gii)
 summary(gii)
 
 # rename column names to shorter names 
-gii <- dplyr::rename(gii, GII =Gender.Inequality.Index..GII., MMR = Maternal.Mortality.Ratio , ABR= Adolescent.Birth.Rate, PercentParlRepre= Percent.Representation.in.Parliament ,  edu2F =Population.with.Secondary.Education..Female., 
-              edu2M =Population.with.Secondary.Education..Male., LabF=Labour.Force.Participation.Rate..Female., LabM=Labour.Force.Participation.Rate..Male.)
+gii <- dplyr::rename(gii, GII =Gender.Inequality.Index..GII., MMR = Maternal.Mortality.Ratio , ABR= Adolescent.Birth.Rate, PercentParlRepre= Percent.Representation.in.Parliament ,  
+                     edu2F =Population.with.Secondary.Education..Female., edu2M =Population.with.Secondary.Education..Male., LabF=Labour.Force.Participation.Rate..Female., 
+                     LabM=Labour.Force.Participation.Rate..Male.)
 
 
 # mutate the gii data to create two more variables of ratio of female to male secondary education and labor force participation
