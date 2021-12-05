@@ -1,0 +1,144 @@
+# Dimensionality reduction techniques
+
+First thing is to load required libraries or R packages for this exercise. 
+```{r packages5, warning=FALSE, message=FALSE, echo=TRUE}
+# Required libraries
+library(GGally)
+library(corrplot)
+library(FactoMineR)
+```
+
+## Read the data
+
+'human' data created in the data wrangling exercise is read here.
+Let's explore the data in more details.
+
+
+```{r data 5, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 8, fig.width = 8, fig.align = "center"}
+
+# read “Human.csv” dataset saved last week
+human <- read.table("D:/Helsinki/Courses/OpenDataScience/IODS-project/data/human.csv", sep=',', header=TRUE)
+
+
+# summary of variables
+summary(human)
+
+# visualize variables from the dataset 'human' 
+ggpairs(human)
+
+
+# compute the correlation matrix and visualize it with corrplot
+cor(human) %>% corrplot
+```
+
+Above tables and graphs show a lot of variation among countries based on the variables in 'human' data. 'Gross National Income per capita' and 'Maternal mortality ratio' shows the variation the most. For both these columns mean value is away from median, suggesting a skewed distribution. These two columns are negatively correlated. 'Life expectancy at birth' has a longer left tail indicating a few nations with smaller life expectancy values. Female to male ratio in education and Proportion in the labor force has mean above 0.7 but both have longer tail on left side indicating many countries with gender inequality. Longer right tails of 'Maternal mortality ratio' and 'Adolescent birth rate' show that the values are generally smaller but these problems exist in some of the countries.
+
+About relationships between these values: The correlation plot shows that 'Life expectancy at birth' and 'Expected years of schooling' are positively correlated (Correlation Coeffficient = 0.789).  'Maternal mortality ratio' and 'Adolescent birth rate' are also positively correlated (CC: 0.759). 'Life expectancy at birth' is highly negatively correlated with 'Maternal mortality ratio' (CC =-0.857). 'Life expectancy at birth' is negatively correlated with 'Adolescent birth rate' (CC = -0.729). Similarly 'Expected years of schooling' is negatively correlated with both 'Maternal mortality ratio' and 'Adolescent birth rate'. Also female to male ration of secondary education is negatively correlated with 'Maternal mortality ratio' so increasing female education percentage could help in the problem oof 'Maternal mortality ratio'.
+
+## Principal component analysis (PCA)
+
+Let's perform principal component analysis (PCA) on the non standardized human data
+
+```{r PCA,  echo=TRUE, warning=FALSE, message=FALSE,fig.height = 10, fig.width = 10, fig.align = "center"}
+
+# perform principal component analysis (with the SVD method)
+pca_human <- prcomp(human)
+
+# Variation shown by principal component analysis
+s <- summary(pca_human)
+s
+
+# draw a biplot of the principal component representation and the original variables
+biplot(pca_human, choices = 1:2, cex = c(0.8, 1), col = c("grey40", "deeppink2"))
+
+```
+
+now perform principal component analysis (PCA) on the standardized human data.
+
+```{r PCA STD,  echo=TRUE, warning=FALSE, message=FALSE,fig.height = 10, fig.width = 10, fig.align = "center"}
+
+# standardize the variables
+human_std <- scale(human)
+
+# perform principal component analysis (with the SVD method)
+pca_human_std <- prcomp(human_std)
+
+# Variation shown by principal component analysis
+s <- summary(pca_human_std)
+s
+
+# rounded percentages of variance captured by each PC
+pca_pr <- round(100*s$importance[2,], digits = 1) 
+
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+
+# draw a biplot
+biplot(pca_human_std, cex = c(0.8, 1), col = c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2] , title='Principal Component Analysis',xlim=c(-0.2,0.55))
+legend(10,18, c("MMR: Maternal mortality ratio", "ABR: Adolescent birth rate", "GNI_Cap: Gross National Income per capita", "LifeExpect: Life expectancy at birth", "ExpEduYr: Expected years of schooling","edu2Ratio: Female to male ratio of secondary education", "LabRatio: Female to male ratio of Labor force proportion", "PercentParlRepre: % female representatives in parliament"), col =rep('pink',8))   #, trace = TRUE)
+
+```
+
+The results of both analysis (with and without standardizing) are different. Principal components are computed based on the variance. When data without standardization is used the variable with large values (higher scale) contribute more hence 'Gross National Income per capita'(GNI_Cap) shows a long arrow parallel to X-axis and other arrows cannot be clearly seen. In standardized data, all variables are in the same scale so contribution of each variable in the principal component can be studied properly. 
+
+Looking at the plot above, it is clear that two variable 'Maternal mortality ratio' (MMR) and 'Adolescent birth rate' (ABR) are positively correlated with the first principal component and 4 variables 'Gross National Income per capita'(GNI_Cap), 'Life expectancy at birth' (LifeExpect), 'Expected years of schooling'(ExpEduYr) and 'female to male ratio of secondary education' (edu2Ratio) are negatively correlated with the first principal component. The first principal component explains 53.6% variability in the data and the second principal component explains 16.2% variability in the data. The second principal component is negatively correlated with 'female to male ratio of Labor force proportion' (LabRatio) and 'Percentage of female representatives in parliament'
+(PercentParlRepre).
+
+## Multiple Correspondence Analysis
+
+Let's read the 'tea' data from FactoMineR package and explore more details about the data.
+
+```{r MCA data,  echo=TRUE, warning=FALSE, message=FALSE,fig.height = 8, fig.width = 8, fig.align = "center"}
+
+data("tea")
+
+
+# Structure and dimension of the data 
+str(tea)
+
+dim(tea)
+
+```
+
+The data has 36 variables (columns) describing 300 individuals(rows). Let's consider 6 columns for further analysis using multiple correspondence method. 
+
+
+```{r MCA dataselect,  echo=TRUE, warning=FALSE, message=FALSE,fig.height = 8, fig.width = 8, fig.align = "center"}
+
+# column names to keep in the dataset
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "age_Q")
+
+# select the 'keep_columns' to create a new dataset
+tea_time <- select(tea, one_of(keep_columns))
+
+# look at the summaries and structure of the data
+summary(tea_time)
+str(tea_time)
+
+# visualize the dataset
+gather(tea_time) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+
+
+```
+
+Above table shows summary of variables selected for the analysis and the plot shows distribution of data among various categories in each variable. 
+In the next step, let's perform MCA on these selected data columns.
+
+
+```{r MCA,  echo=TRUE, warning=FALSE, message=FALSE,fig.height = 8, fig.width = 8, fig.align = "center"}
+
+# multiple correspondence analysis
+mca <- MCA(tea_time, graph = FALSE)
+
+# summary of the model
+summary(mca)
+
+# visualize MCA
+
+plot(mca, invisible=c("ind"), habillage = "quali", graph.type = "classic", title='Multiple Correspondence Analysis', palette = c('black','green','red','blue','violet','brown'))
+legend(2,3, c("Tea", "How", "how", "sugar", "where", "age_Q"), col =c('black','green','red','blue','violet','brown'), pch = 17)
+
+```
+
+Looking at the graph, it can be seen that dimension 1 primarily shows variation in 'where', 'how', 'sugar' and 'age_Q'. Vertical dimension primarily shows variation in 'Tea' and 'How'. The tea packing (how) and where it is bought (where) go together. Correspondence between Age(age_Q), type of tea (Tea), 'sugar' and additive in tea (How) can be seen clearly. Both these dimensions explain only 13% and 11% inertia respectively. Some more dimensions should be studied. Also, the model fit need to be investigated further. However, the analysis is concluded here with these 6 columns.

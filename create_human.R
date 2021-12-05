@@ -1,58 +1,81 @@
 ###########################################################################################################################################
 ## Author: Ashwini Joshi
 ## Date: 28-Nov-2021
-## Description: Data wrangling exercise of open data science course week-4.
-## The datasets used in this exercise are taken from http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets
+## Description: Data wrangling exercise of open data science course week-5.
+## The datasets used in this exercise is saved in the last week's exercise.
 ###########################################################################################################################################
 
 # Required packages
 library(dplyr)
 library(tidyr)
+library(stringr)
 
-# read “Human development” dataset
-hd <- read.csv("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/human_development.csv", stringsAsFactors = F)
-# 
-# read “Gender inequality” dataset
-gii <- read.csv("http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/gender_inequality.csv", stringsAsFactors = F, na.strings = "..")
-
-# look at the (column) names of “Human development” dataset
-names(hd)
-
-# look at the structure of “Human development” dataset
-str(hd)
-
-# print out summaries of the variables
-summary(hd)
-
-# rename column names to shorter names 
-hd <-dplyr::rename(hd, HDI =Human.Development.Index..HDI., LifeExpext = Life.Expectancy.at.Birth, ExpEduYr= Expected.Years.of.Education, MeanEduYr= Mean.Years.of.Education ,  GNI_Cap=Gross.National.Income..GNI..per.Capita, RankDiff_GNI_HDI=GNI.per.Capita.Rank.Minus.HDI.Rank )
-
-# the (column) names of  “Gender inequality” dataset
-names(gii)
-
-# the structure of  “Gender inequality” dataset
-str(gii)
-
-# summaries of the variables of  “Gender inequality” dataset
-summary(gii)
-
-# rename column names to shorter names 
-gii <- dplyr::rename(gii, GII =Gender.Inequality.Index..GII., MMR = Maternal.Mortality.Ratio , ABR= Adolescent.Birth.Rate, PercentParlRepre= Percent.Representation.in.Parliament ,  edu2F =Population.with.Secondary.Education..Female., 
-              edu2M =Population.with.Secondary.Education..Male., LabF=Labour.Force.Participation.Rate..Female., LabM=Labour.Force.Participation.Rate..Male.)
-
-
-# mutate the gii data to create two more variables of ratio of female to male secondary education and labor force participation
-gii <- data.frame(gii) %>%
-  mutate(edu2Ratio = edu2F/edu2M)%>%
-  mutate(edu2Ratio = edu2F/edu2M)
-
-
-
-# join the two datasets with 'country' as identifier
-human <- inner_join(hd, gii, by = "Country")
 
 # set working directory
-setwd("D:/Helsinki/Courses/OpenDataScience/IODS-project/")
+setwd("D:/Helsinki/Courses/OpenDataScience/IODS-project/data")
+
+# read “Human.csv” dataset saved last week
+human <- read.table("human.csv", sep=',', header=TRUE)
+
+# structure of the data 
+str(human)
+
+# dimension of data
+dim(human) # 195 rows(observations) and 19 columns (variables)
+
+# 'human' data is created by combining two datasets from 'http://s3.amazonaws.com/assets.datacamp.com/production/course_2218/datasets/'.
+# one dataset was about human development index and other dataset about gender inequality index.
+# Description of this new 'human' dataset variables. 
+
+# The data combines several indicators from most countries in the world
+
+# "Country" = Country name
+# 
+# # Health and knowledge
+# 
+# "GNI_Cap" = Gross National Income per capita
+# "LifeExpect" = Life expectancy at birth
+# "ExpEduYr" = Expected years of schooling 
+# "MMR" = Maternal mortality ratio
+# "ABR" = Adolescent birth rate
+# 
+# # Empowerment
+# 
+# "PercentParlRepre" = Percentage of female representatives in parliament
+# "edu2F" = Proportion of females with at least secondary education
+# "edu2M" = Proportion of males with at least secondary education
+# "LabF" = Proportion of females in the labour force
+# "LabM" " Proportion of males in the labour force
+# 
+# "edu2Ratio" = edu2F / edu2M
+# "LabRatio" = LabF / LabM
+
+str(human$GNI_Cap) # structure of GNI_Cap column
+
+# Convert GNI_Cap variable to numeric by changing ',' to '.'
+human <- data.frame(human) %>%
+  mutate(GNI_Cap = as.numeric(str_replace(GNI_Cap, ",", "")))
+
+
+# List of required variables
+ReqVar <- c("Country", "GNI_Cap", "LifeExpect", "ExpEduYr" , "MMR", "ABR", "PercentParlRepre", "edu2Ratio", "LabRatio" )
+
+
+# use human data of required variables only
+human <- human[,ReqVar]
+
+# Remove rows with missing values
+human <- na.omit(human)
+
+print(human$Country)
+# Last 7 rows are for regions and not countries so they are removed.
+human <- human[1:155,]
+
+# set Country as rownames
+rownames(human) <- human$Country
+
+# remove the Country variable
+human <- select(human, -Country)
 
 # save the data as 'human'
-write.table(human, "data/human.csv", sep=',', col.names = TRUE, row.names = FALSE)
+write.table(human, "human.csv", sep=',', col.names = TRUE, row.names = TRUE)

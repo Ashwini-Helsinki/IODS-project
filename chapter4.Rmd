@@ -1,6 +1,6 @@
 # Clustering and classification
 
-First thing is to load required libraries or R packages for this exercise. Also set random seed for repeatability of the results.
+First thing is to load required libraries or R packages for this exercise. Also set random seed for reproducibility of the results.
 
 ```{r packages4, warning=FALSE, message=FALSE, echo=TRUE}
 # Required libraries
@@ -57,7 +57,7 @@ Distribution of all the variables can be seen from the above plot.
 
 To explore the relationships between the variables let's use 'corrplot'
 
-```{r corr, echo=FALSE, warning=FALSE, message=FALSE,fig.height = 10, fig.width = 10, fig.align = "center"}
+```{r corr, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 10, fig.width = 10, fig.align = "center"}
 
 # calculate the correlation matrix and round it
 cor_matrix<-cor(Boston) %>% round(digits = 2)
