@@ -1,0 +1,317 @@
+# Analysis of longitudinal data
+
+First thing is to load required libraries or R packages for this exercise. 
+```{r packages6, warning=FALSE, message=FALSE, echo=TRUE}
+# Required libraries
+library(lme4)
+
+```
+
+## 'RATS' data
+
+'RATS' data in wide and long form created in the data wrangling exercise is read here.
+
+```{r data ratsl, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 8, fig.width = 8, fig.align = "center"}
+# read “RATS.csv” and “RATSL.csv” dataset 
+RATS <- read.table("D:/Helsinki/Courses/OpenDataScience/IODS-project/data/RATS.csv", sep=',', header=TRUE)
+RATSL <- read.table("D:/Helsinki/Courses/OpenDataScience/IODS-project/data/RATSL.csv", sep=',', header=TRUE)
+RATSL$ID <- factor(RATSL$ID)
+RATSL$Group <- factor(RATSL$Group)
+```
+
+
+### Individual profiles by Group
+
+Let's explore the data in more details. Following figure shows group-wise plots of each rat's growth profile by line graph.
+
+```{r plot ratsl, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 8, fig.width = 8, fig.align = "center"}
+
+# Draw the plot
+ggplot(RATSL, aes(x = Time, y = Weight, col=ID)) +
+  geom_line() +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "right") +
+  scale_y_continuous(limits = c(min(RATSL$Weight), max(RATSL$Weight)))
+
+```
+
+First group has rats with low starting weight. The increase in the weight is also small for this group. Group 2 and 3 have rats with higher weight and the increase in the weight during those 9 weeks is also considerably high in these two groups. Rat Id 12 has the highest starting weight 555 gram and it remained higher than all other rats through out these 9 weeks period. Rat id 2 has the lowest weight for all these 9 weeks.
+
+### Plot with standardized data
+
+Let's plot similar graph with standardized data. The standardized values are obtained by subtracting the mean of observation of the same week-day from the original observation and then dividing by the corresponding week-day's standard deviation.
+
+```{r std RATSL, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 6, fig.width = 6, fig.align = "center"}
+# Standardise the variable Weight
+RATSL <- RATSL %>%
+  group_by(Time) %>%
+  mutate(stdwt = (Weight - mean(Weight))/sd(Weight) ) %>%
+  ungroup()
+
+
+# Plot again with the standardised bprs
+ggplot(RATSL, aes(x = Time, y = stdwt, col = ID)) +
+  geom_line() +
+  facet_grid(. ~ Group, labeller = label_both) +
+  theme(legend.position = "right") +
+  scale_y_continuous(name = "standardized weight")
+
+```
+
+In standardized data plot, group 1 shows no increasing or decreasing trend. Rat Id 2 still remains lower than all other. Group 2 was showing much higher slope earlier but after standardization, one RAT observations show decreasing trend. Similarly for group 3, all show non-increasing trend.
+
+### Summary measure plot
+
+```{r summary measure RATSL, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 6, fig.width = 6, fig.align = "center"}
+
+# Summary data with mean and standard error of weight by Group and Time 
+wtSS <- RATSL %>%
+  group_by(Group, Time) %>%
+  summarise( mean = mean(Weight), se = sd(Weight)/sqrt(n()) ) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(wtSS)
+
+# Plot the mean profiles
+ggplot(wtSS, aes(x = Time, y = mean, col = Group)) +
+  geom_line() +
+  geom_point(size=3) +
+  geom_errorbar(aes(ymin = mean - se, ymax = mean + se), width=0.3) +
+  theme(legend.position = "c(0.8,0.5)") +
+  scale_y_continuous(name = "mean(weight) +/- se(weight)")
+
+```
+
+Above plot shows progression of each group over the period of 9 weeks. The filled circle shows mean value and vertical line shows (mean(weight) +/- se(weight)) i.e. variation in the data. Group 1 has small SE values means small variation in the observation. Group 3 has more variation among rats as compared to group 1. Group 3 has highest mean weight for all weeks. Group 2 has the RAT with highest weight (Rat id 12) but the mean weight of group 2 is lower than that of group 3. Because of one observation is very different than others, group 2 has highest variation which can be seen from the plot.
+
+### Boxplot
+
+Let's explore box plot of this data. Compute mean value for each rat excluding baseline or 1st week's observation. Plot boxplot for each group.
+
+```{r boxplot RATSL, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 6, fig.width = 6, fig.align = "center"}
+
+# Create a summary data by Group and ID with mean as the summary variable (ignoring baseline Time(days) 1).
+RATSLSS <- RATSL %>%
+  filter(Time > 1) %>%
+  group_by(Group, ID) %>%
+  summarise( mean=mean(Weight) ) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(RATSLSS)
+
+# Draw a boxplot of the mean versus Group
+ggplot(RATSLSS, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=3, fill = "black") +
+  theme(legend.position = "right") +
+  scale_y_continuous(name = "mean(Weight), Time(Day)")
+
+
+```
+
+The box plot of all the data shows clearly that 3 groups have clearly different weight measurements. Group 1 has lowest values with all less than 300 grams and low variation. One observation (Rat no 2) is an outlier. Group 2 clearly shows very high variation with one observation (Rat no. 12) as an outlier. Because of high weight of rat ID 12 the mean value is much higher in the box plot and median is near the 1st quantile. Group 3 has moderate variation among its observations with 1 outlier.
+
+Let's remove the two extreme points of the dataset Rat 2 and Rat 12 and rerun the boxplot.
+
+```{r boxplot2 RATSL, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 6, fig.width = 6, fig.align = "center"}
+
+# Create a new data by filtering the outlier and adjust the ggplot code the draw the plot again with the new data
+RATSLSS1 <- RATSLSS %>%
+  filter(mean < 550 & mean > 250)
+  
+# Draw a boxplot of the mean versus Group
+ggplot(RATSLSS1, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=3, fill = "black") +
+  scale_y_continuous(name = "mean(Weight), Time(Day)")
+```
+
+After removing the outlier, group 2 has low variation among its observations. It's mean value is almost in the middle of the box plot. We have not changed group 3 so the figure remains the same. The outlier of group 3 also can be removed but that value is not to the extreme so it is kept in this analysis.
+
+### Anova
+
+We have 3 groups so instead of t-test, let's perform Anova. The three groups are clearly different from the first observation itself. 
+If mean value is simply compared with groups, it will show clear difference among groups. 
+But to check if the mean values differ because of baseline value or because of properly grouping the rats, let's perform linear regression with mean as response and baseline and group as covariates. Then compute ANOVA (analysis of variace).
+
+```{r anova RATSL, echo=TRUE, warning=FALSE, message=FALSE}
+
+
+# Add the baseline from the original data as a new variable to the summary data
+RATSLSS2 <- RATSLSS %>%
+  mutate(baseline = RATS$WD1)
+
+# Fit the linear model with the mean as the response 
+fit <- lm(mean ~ baseline + Group, data = RATSLSS2)
+
+# Compute the analysis of variance table for the fitted model with anova()
+anova(fit)
+
+
+```
+
+'baseline' is the most important covariate so the difference in mean values is mainly because of the baseline values. 'Group' can also be considered as an important covariate if type-1 error is 0.1.
+
+
+## BPRS data
+
+Let's perform analysis on BPRS data.
+
+```{r BPRS data, echo=TRUE, warning=FALSE, message=FALSE}
+
+# read “BPRS.csv” and “BPRSL.csv” dataset 
+BPRS <- read.table("D:/Helsinki/Courses/OpenDataScience/IODS-project/data/BPRS.csv", sep=',', header=TRUE)
+BPRSL <- read.table("D:/Helsinki/Courses/OpenDataScience/IODS-project/data/BPRSL.csv", sep=',', header=TRUE)
+BPRSL$treatment <- factor(BPRSL$treatment )
+BPRSL$subject <- factor(paste0(BPRSL$subject, "_",BPRSL$treatment) )
+```
+
+Profile plot for each patient(subject) with linetype showing their tretament ID.
+
+```{r BPRS plot, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 6, fig.width = 6, fig.align = "center"}
+
+# Plot the RATSL data
+ggplot(BPRSL, aes(x = week, y = bprs, col=subject)) +
+  geom_line(aes(linetype = treatment)) +
+  scale_x_continuous(name = "week",breaks = seq(0,12,3)) +
+  scale_y_continuous(name = "bprs") +
+  theme(legend.position = "right")
+
+
+```
+
+From the plot, it can be seen that subjects of both the treatment groups have overlapping line graphs. So, the two treatment groups don't seem to be very different.
+Subject 11 on treatment 2 clearly has higher measurements from start to end of this follow-up. Overall decreasing trend can be seen for most of the subjects. Following each line of 40 patients is not possible also Plotting scatter plot using 'pairs' for 40 subjects is possible but difficult to interprete anything from those 40 X 40 small plots.
+
+Hence, let's perform regression analysis to check effect of treatment id and duration of treatment on 'bprs' measurements. First, perform regression analysis without considering the repeated measures i.e. the correlation among observations of the same patient is ignored here.
+
+
+```{r BPRS lm, echo=TRUE, warning=FALSE, message=FALSE}
+
+# create a regression model BPRS_reg
+BPRS_reg <- lm(bprs ~ week + treatment, data = BPRSL)
+
+# print out a summary of the model
+summary(BPRS_reg)
+
+```
+
+As expected, treatment has not shown significant impact on the 'bprs' measurement. Since treatment is a binary variable, treatment 1 is considered as baseline and treatment 2 is shown here as model term. Duration of treatment (week) and intercept term both have small p-values suggesting their importance. Estimate for 'week' is negative so both the treatments are showing impact equally with increase in duration (weeks) there is decrease in 'bprs'.
+
+Here, We have considered only the independent model with treatment and duration of treatment as covariates. To understand how the correlation of same subject's observation affects the model and to understand the effect of randomness due to each subject, let's perform mixed effect models.
+
+1. Random intercept model
+
+Here we will again fit regression model where for each subject slope will be same but the intercept term will be different. 
+
+```{r BPRS lmer, echo=TRUE, warning=FALSE, message=FALSE}
+
+# access library lme4
+library(lme4)
+
+# Create a random intercept model
+BPRSL_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = BPRSL, REML = FALSE)
+
+# Print the summary of the model
+summary(BPRSL_ref)
+
+```
+
+Estimates of week and treatment have not changed drastically but variation in week has reduced which can be seen from its std error values. Randomness due to difference in subjects was not considered earlier, that's why the std. error of week was inflated. Now, we have a basic mixed effect model.
+
+Please note that treatment2 is still not showing important contribution in the model so it can be removed. However, to reproduce all the analysis as in chapter 9, I will continue using it for further analysis.
+
+Next, let's use random slope model along with random intercept. In this model intercept and slope (estimate of week) both can be different for each subject.
+
+```{r BPRS lmer week, echo=TRUE, warning=FALSE, message=FALSE}
+
+# create a random intercept and random slope model
+BPRSL_ref1 <- lmer(bprs ~ week + treatment +(week | subject), data = BPRSL, REML = FALSE)
+
+# print a summary of the model
+summary(BPRSL_ref1)
+
+# perform an ANOVA test on the two models
+anova(BPRSL_ref1, BPRSL_ref)
+
+```
+
+In random effect, most of the variance is explained by the intercept term but the residuals are substantially lower than earlier model.
+Also the anova test suggest that 'random slope and random intercept' model is better than only 'random intercept' model. AIC of the new model is also lower than AIC of earlier model.
+
+Next, let's consider interaction term of week and treatment in the fixed effect.
+
+```{r BPRS lmer interaction, echo=TRUE, warning=FALSE, message=FALSE}
+
+# create a random intercept and random slope model
+BPRSL_ref2 <- lmer(bprs ~ week*treatment  +(week | subject), data = BPRSL, REML = FALSE)
+
+# print a summary of the model
+summary(BPRSL_ref2)
+
+# perform an ANOVA test on the two models
+anova(BPRSL_ref2, BPRSL_ref1)
+
+
+
+```
+
+The new model with interaction term does not show any improvement on earlier model. Further, compute the fitted values from this model and plot the observed values and fitted values.
+
+```{r BPRS lmer fit, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 6, fig.width = 6, fig.align = "center"}
+
+# draw the plot of BPRSL
+ggplot(BPRSL, aes(x = week, y = bprs, col=subject)) +
+  geom_line(aes(linetype = treatment)) +
+  scale_x_continuous(name = "week", breaks = seq(0, 8, 2)) +
+  scale_y_continuous(name = "Observed weight (grams)") +
+  theme(legend.position = "right")
+
+# Create a vector of the fitted values
+Fitted <- fitted(BPRSL_ref2)
+
+# Create a new column fitted to BPRSL
+BPRSL <- BPRSL %>%
+  mutate(Fitted)
+
+# draw the plot of BPRSL
+ggplot(BPRSL, aes(x = week, y = Fitted, col = subject)) +
+  geom_line(aes(linetype = treatment)) +
+  scale_x_continuous(name = "week", breaks = seq(0, 8, 2)) +
+  scale_y_continuous(name = "Fitted weight (grams)") +
+  theme(legend.position = "right")
+```
+
+Since, treatment has not shown importance in  the model, in the next section, let's fir a model without tretament term. 
+
+
+```{r BPRS lmer notreatment, echo=TRUE, warning=FALSE, message=FALSE,fig.height = 6, fig.width = 6, fig.align = "center"}
+
+# create a random intercept and random slope model
+BPRSL_ref3 <- lmer(bprs ~ week  +(week | subject), data = BPRSL, REML = FALSE)
+
+# print a summary of the model
+summary(BPRSL_ref3)
+
+# perform an ANOVA test on the two models
+anova(BPRSL_ref3, BPRSL_ref1)
+
+# Create a vector of the fitted values
+Fitted3 <- fitted(BPRSL_ref3)
+
+# Create a new column fitted to BPRSL
+BPRSL <- BPRSL %>%
+  mutate(Fitted3)
+
+# draw the plot of BPRSL
+ggplot(BPRSL, aes(x = week, y = Fitted3, col = subject)) +
+  geom_line(aes(linetype = treatment)) +
+  scale_x_continuous(name = "week", breaks = seq(0, 8, 2)) +
+  scale_y_continuous(name = "Fitted weight (grams)") +
+  theme(legend.position = "right")
+
+```
+
+This model has AIC slightly smaller than BPRSL_ref1 but overall this is not an improvement on BPRSL_ref1. Hence, the model that considers random slope and random intercept is goos for this data. 
